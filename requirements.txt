@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+python-multipart
+torch
+torchvision
+transformers
+accelerate
+open_clip_torch
+faiss-cpu
+Pillow
+sentencepiece
+protobuf
+timm
+ftfy
