@@ -12,3 +12,4 @@ sentencepiece
 protobuf
 timm
 ftfy
+huggingface_hub
