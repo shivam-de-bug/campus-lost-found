@@ -1,0 +1,36 @@
+# Backend Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.Python
+env/
+venv/
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Data (generated during runtime)
+found_items/
+lost_items/
+*.index
+found_items.index
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
