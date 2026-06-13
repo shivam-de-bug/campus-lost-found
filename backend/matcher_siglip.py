@@ -61,7 +61,8 @@ class LostAndFoundMatcher:
     def _format_results(self, scores, indices, is_text=False):
         results = []
         # Text-to-image dot products can be much lower, even negative for non-matches.
-        threshold = 0.05 if is_text else 0.10
+        threshold = -0.15 if is_text else -0.10
+        
         
         for score, idx in zip(scores, indices):
             if idx == -1:
@@ -85,17 +86,20 @@ class LostAndFoundMatcher:
                 display_score = min(0.99, max(0.10, (raw_score * 3.5) + 0.10))
                 confidence = "High" if raw_score > 0.20 else "Medium" if raw_score > 0.14 else "Low"
             
-            results.append({
+            # Create a dictionary copy with all item fields + scoring fields
+            res_item = {
                 "rank": len(results)+1,
-                "filename": item["filename"],
-                "location": item["location"],
-                "contact": item["contact"],
-                "description": item["description"],
                 "similarity": round(display_score, 4),
                 "raw_score": round(raw_score, 4),
                 "confidence": confidence
-            })
+            }
+            # Copy all fields from item metadata
+            for key, val in item.items():
+                res_item[key] = val
+                
+            results.append(res_item)
         return results
+
 
     def save(self, path="./"):
         faiss.write_index(self.index, os.path.join(path, "found_items.index"))
