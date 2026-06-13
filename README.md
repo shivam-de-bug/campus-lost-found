@@ -1,7 +1,6 @@
 # 🔍 Smart Campus Lost & Found System
 
 > **A Multimodal Vision-Language Platform for Intelligent Item Retrieval**  
-> Bachelor Thesis Project (BTP) — IIIT Delhi | Submitted April 2026
 
 [![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green?logo=fastapi)](https://fastapi.tiangolo.com)
