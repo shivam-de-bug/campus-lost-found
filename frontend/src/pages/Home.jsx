@@ -1,18 +1,20 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import API from "../api/apiClient";
+import { useToast } from "../components/ToastContext";
 import Header from "../components/Header";
 import SearchBar from "../components/SearchBar";
 import ReportForm from "../components/ReportForm";
 import ItemCard from "../components/ItemCard";
+import { SkeletonGrid } from "../components/Skeleton";
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState("found"); // found, lost, my-reports
+  const toast = useToast();
+  const [activeTab, setActiveTab] = useState("found");
   const [foundItems, setFoundItems] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [showReportForm, setShowReportForm] = useState(false);
-  
+
   const currentUser = API.getCurrentUser() || { email: "anonymous" };
 
   useEffect(() => {
@@ -32,126 +34,124 @@ export default function Home() {
   };
 
   const handleSearchByImage = async (file) => {
-    if (!file) {
-      alert("Please select an image");
-      return;
-    }
-
+    if (!file) { toast.warning("Please select an image"); return; }
     setLoading(true);
     try {
       const results = await API.searchLost({ file });
       setSearchResults(results.matches || []);
+      if ((results.matches || []).length > 0) {
+        toast.success(`Found ${results.matches.length} matching items!`);
+      } else {
+        toast.info("No matches found. Try a different image.");
+      }
     } catch (error) {
-      alert("Error searching: " + error.message);
-    } finally {
-      setLoading(false);
-    }
+      toast.error("Error searching: " + error.message);
+    } finally { setLoading(false); }
   };
 
   const handleSearchByText = async (text) => {
-    if (!text.trim()) {
-      alert("Please enter a search term");
-      return;
-    }
-
+    if (!text.trim()) { toast.warning("Please enter a search term"); return; }
     setLoading(true);
     try {
       const results = await API.searchLost({ text_query: text });
       setSearchResults(results.matches || []);
+      if ((results.matches || []).length > 0) {
+        toast.success(`Found ${results.matches.length} matching items!`);
+      } else {
+        toast.info("No matches found. Try different keywords.");
+      }
     } catch (error) {
-      alert("Error searching: " + error.message);
-    } finally {
-      setLoading(false);
-    }
+      toast.error("Error searching: " + error.message);
+    } finally { setLoading(false); }
   };
 
   const handleReportFound = async (formData, reportFile) => {
     if (!reportFile || !formData.location || !formData.contact) {
-      alert("Please fill all required fields");
+      toast.warning("Please fill all required fields");
       return;
     }
-
     const form = new FormData();
     form.append("file", reportFile);
     form.append("location", formData.location);
     form.append("contact", formData.contact);
     form.append("description", formData.description);
     form.append("category", formData.category);
-
     setLoading(true);
     try {
       await API.reportFound(form);
-      alert("Item reported successfully!");
-      setShowReportForm(false);
+      toast.success("Item reported successfully!");
+      setActiveTab("found");
       loadFoundItems();
     } catch (error) {
-      alert("Error reporting item: " + error.message);
-    } finally {
-      setLoading(false);
-    }
+      toast.error("Error reporting item: " + error.message);
+    } finally { setLoading(false); }
   };
 
   const handleFlagDispute = async (filename) => {
-    if (!confirm("Are you sure you want to flag this claim handover as disputed? Admins will review the verified logs.")) {
-      return;
-    }
+    if (!confirm("Are you sure you want to flag this claim as disputed?")) return;
     setLoading(true);
     try {
       await API.updateItemStatus(filename, "disputed");
-      alert("Dispute flagged successfully! Administrators have been notified.");
+      toast.success("Dispute flagged successfully! Administrators notified.");
       loadFoundItems();
     } catch (error) {
-      alert("Error flagging dispute: " + error.message);
-    } finally {
-      setLoading(false);
-    }
+      toast.error("Error flagging dispute: " + error.message);
+    } finally { setLoading(false); }
   };
 
-  // Filter items reported by current logged-in user (student)
-  const myReportedItems = foundItems.filter(
-    (item) => item.reported_by === currentUser.email
-  );
+  const myReportedItems = foundItems.filter((item) => item.reported_by === currentUser.email);
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-20 animate-slide-up">
+    <div className="page animate-fade-in">
       <Header />
 
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <main className="page-content">
+        {/* Welcome Hero */}
+        <div className="animate-slide-up mb-8" style={{ position: "relative" }}>
+          <div className="bg-blob" style={{
+            width: 200, height: 200, background: "rgba(124,58,237,0.06)", top: -50, right: -50, filter: "blur(60px)", position: "absolute"
+          }}></div>
+          <h2 className="gradient-text" style={{
+            fontFamily: "'Space Grotesk', sans-serif",
+            fontSize: "clamp(1.5rem, 4vw, 2rem)",
+            fontWeight: 800,
+            margin: 0,
+          }}>
+            Welcome back, {currentUser.name || "Explorer"} 👋
+          </h2>
+          <p style={{ color: "var(--text-muted)", fontSize: "0.85rem", marginTop: "var(--space-2)" }}>
+            {foundItems.length} items currently in campus inventory
+          </p>
+        </div>
+
         {/* Report Form Tab */}
         {activeTab === "report" && (
-          <div className="bg-white rounded-3xl border border-slate-200/80 p-6 mb-8 max-w-2xl mx-auto">
-            <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center">
-              <i className="fas fa-plus-circle text-indigo-600 mr-2"></i>Log a Newly Found Item
-            </h3>
+          <div className="max-w-2xl mx-auto mb-8">
             <ReportForm
               onSubmit={handleReportFound}
               loading={loading}
-              onCancel={() => setShowReportForm(false)}
+              onCancel={() => setActiveTab("found")}
             />
           </div>
         )}
 
         {/* Browse Found Items Tab */}
         {activeTab === "found" && (
-          <div>
-            <h2 className="text-2xl font-bold text-slate-800 mb-6 flex items-center gap-2">
-              <i className="fas fa-boxes-stacked text-indigo-600"></i>Recently Found on Campus
-            </h2>
+          <div className="animate-slide-up">
+            <div className="section-header">
+              <i className="fas fa-boxes-stacked"></i>
+              <h2>Recently Found on Campus</h2>
+            </div>
             {loading ? (
-              <div className="text-center py-16">
-                <i className="fas fa-spinner fa-spin text-4xl text-indigo-600 mb-3"></i>
-                <p className="text-slate-500 font-medium">Scanning campus inventory...</p>
-              </div>
+              <SkeletonGrid count={4} />
             ) : foundItems.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center max-w-lg mx-auto">
-                <i className="fas fa-box-open text-6xl text-slate-300 mb-4"></i>
-                <h3 className="text-xl font-bold text-slate-700">No Found Items</h3>
-                <p className="text-slate-500 mt-2">
-                  There are currently no unclaimed items in the system. Check back later or file a search query.
-                </p>
+              <div className="empty-state">
+                <div className="empty-state-icon"><i className="fas fa-box-open"></i></div>
+                <h3>No Found Items</h3>
+                <p>There are currently no unclaimed items in the system. Check back later or file a search query.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-4">
                 {foundItems.map((item, idx) => (
                   <ItemCard key={idx} item={item} />
                 ))}
@@ -160,33 +160,36 @@ export default function Home() {
           </div>
         )}
 
-        {/* Search Tab (SigLIP matching integration) */}
+        {/* Search Tab */}
         {activeTab === "lost" && (
-          <div>
+          <div className="animate-slide-up">
             <SearchBar
               onImageSearch={handleSearchByImage}
               onTextSearch={handleSearchByText}
               loading={loading}
             />
 
-            {/* Results Gallery */}
             {searchResults.length > 0 && (
-              <div className="mt-8">
-                <h3 className="text-2xl font-bold text-slate-800 mb-6 flex items-center gap-2">
-                  <i className="fas fa-circle-nodes text-emerald-500"></i>AI Matching Results
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="mt-6">
+                <div className="section-header">
+                  <i className="fas fa-circle-nodes text-success"></i>
+                  <h3>AI Matching Results</h3>
+                  <span className="badge badge-success" style={{ marginLeft: "auto" }}>
+                    {searchResults.length} matches
+                  </span>
+                </div>
+                <div className="grid grid-4">
                   {searchResults.map((item, idx) => (
-                    <div key={idx} className="relative group">
+                    <div key={idx} className="relative">
                       <ItemCard item={item} />
-                      <div className={`absolute top-4 right-4 text-xs font-bold px-3 py-1 rounded-full shadow-lg ${
-                        item.confidence === "High"
-                          ? "bg-emerald-600 text-white"
-                          : item.confidence === "Medium"
-                          ? "bg-amber-500 text-white"
-                          : "bg-slate-600 text-white"
-                      }`}>
-                        {item.confidence} Match ({Math.round(item.similarity * 100)}%)
+                      <div className="match-badge">
+                        <span className={`badge ${
+                          item.confidence === "High" ? "badge-success"
+                            : item.confidence === "Medium" ? "badge-warning"
+                            : "badge-primary"
+                        }`} style={{ fontSize: "0.6rem" }}>
+                          {item.confidence} ({Math.round(item.similarity * 100)}%)
+                        </span>
                       </div>
                     </div>
                   ))}
@@ -195,12 +198,10 @@ export default function Home() {
             )}
 
             {!loading && searchResults.length === 0 && (
-              <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center max-w-lg mx-auto mt-6">
-                <i className="fas fa-wand-magic-sparkles text-6xl text-indigo-200 mb-4"></i>
-                <h3 className="text-xl font-bold text-slate-700">Multimodal AI Search</h3>
-                <p className="text-slate-500 mt-2">
-                  Upload an image of your lost item or describe it in natural language. The backend SigLIP vision-language neural network will calculate vector embeddings to find matching items.
-                </p>
+              <div className="empty-state mt-6">
+                <div className="empty-state-icon"><i className="fas fa-wand-magic-sparkles"></i></div>
+                <h3>Multimodal AI Search</h3>
+                <p>Upload an image of your lost item or describe it in natural language. The SigLIP neural network will find matching items.</p>
               </div>
             )}
           </div>
@@ -208,138 +209,126 @@ export default function Home() {
 
         {/* My Reported Items Tab */}
         {activeTab === "my-reports" && (
-          <div className="bg-white rounded-2xl border border-slate-200 p-6">
-            <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
-              <i className="fas fa-clipboard-list text-indigo-600"></i>My Reports Registry
-            </h3>
-            {myReportedItems.length === 0 ? (
-              <div className="text-center py-12">
-                <i className="fas fa-file-circle-exclamation text-5xl text-slate-300 mb-3"></i>
-                <p className="text-slate-500 font-medium">You have not reported any items yet.</p>
+          <div className="animate-slide-up">
+            <div className="card">
+              <div className="card-body" style={{ padding: "var(--space-6)" }}>
+                <div className="section-header" style={{ marginBottom: "var(--space-5)" }}>
+                  <i className="fas fa-clipboard-list"></i>
+                  <h3>My Reports Registry</h3>
+                </div>
+                {myReportedItems.length === 0 ? (
+                  <div className="empty-state">
+                    <div className="empty-state-icon"><i className="fas fa-file-circle-exclamation"></i></div>
+                    <p style={{ fontWeight: 600 }}>You have not reported any items yet.</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th>Photo</th>
+                          <th>Description</th>
+                          <th>Found Location</th>
+                          <th>Date Logged</th>
+                          <th>Status</th>
+                          <th style={{ textAlign: "center" }}>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {myReportedItems.map((item, idx) => (
+                          <tr key={idx}>
+                            <td>
+                              <img
+                                src={API.getImageUrl(item.filename)}
+                                alt=""
+                                style={{ width: 44, height: 44, borderRadius: "var(--radius-md)", objectFit: "cover", border: "1px solid var(--border)" }}
+                                onError={(e) => { e.target.src = "https://via.placeholder.com/50?text=Item"; }}
+                              />
+                            </td>
+                            <td style={{ fontWeight: 600, color: "var(--text-primary)" }}>
+                              {item.description || "Found Item"}
+                            </td>
+                            <td>{item.location}</td>
+                            <td>{item.timestamp ? new Date(item.timestamp * 1000).toLocaleDateString() : "Recently"}</td>
+                            <td>
+                              <span className={`badge ${
+                                item.status === "claimed" ? "badge-success"
+                                  : item.status === "disputed" ? "badge-danger"
+                                  : "badge-primary"
+                              }`}>
+                                {item.status || "held"}
+                              </span>
+                            </td>
+                            <td style={{ textAlign: "center" }}>
+                              {item.status === "claimed" && (
+                                <button onClick={() => handleFlagDispute(item.filename)} className="btn-danger" style={{ fontSize: "0.7rem", padding: "4px 10px" }}>
+                                  <i className="fas fa-triangle-exclamation"></i>Dispute
+                                </button>
+                              )}
+                              {(item.status === "held" || !item.status) && (
+                                <span style={{ color: "var(--text-muted)", fontSize: "0.7rem", fontWeight: 500 }}>Held at Gates</span>
+                              )}
+                              {item.status === "disputed" && (
+                                <span style={{ color: "var(--danger)", fontSize: "0.7rem", fontWeight: 700 }}>Under Review</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm border-collapse text-left">
-                  <thead>
-                    <tr className="bg-slate-50 text-slate-600 border-b border-slate-200">
-                      <th className="px-6 py-4 font-semibold">Photo</th>
-                      <th className="px-6 py-4 font-semibold">Description</th>
-                      <th className="px-6 py-4 font-semibold">Found Location</th>
-                      <th className="px-6 py-4 font-semibold">Date Logged</th>
-                      <th className="px-6 py-4 font-semibold">Status</th>
-                      <th className="px-6 py-4 font-semibold text-center">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {myReportedItems.map((item, idx) => (
-                      <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50/50 transition">
-                        <td className="px-6 py-3">
-                          <img
-                            src={API.getImageUrl(item.filename)}
-                            alt=""
-                            className="w-12 h-12 rounded-lg object-cover border border-slate-200"
-                            onError={(e) => { e.target.src = "https://via.placeholder.com/50?text=Item"; }}
-                          />
-                        </td>
-                        <td className="px-6 py-3 font-semibold text-slate-800">{item.description || "Found Item"}</td>
-                        <td className="px-6 py-3 text-slate-600">{item.location}</td>
-                        <td className="px-6 py-3 text-slate-500">
-                          {item.timestamp ? new Date(item.timestamp * 1000).toLocaleDateString() : "Recently"}
-                        </td>
-                        <td className="px-6 py-3">
-                          <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase ${
-                            item.status === "claimed"
-                              ? "bg-emerald-50 text-emerald-700"
-                              : item.status === "disputed"
-                              ? "bg-rose-50 text-rose-700"
-                              : "bg-indigo-50 text-indigo-700"
-                          }`}>
-                            {item.status || "held"}
-                          </span>
-                        </td>
-                        <td className="px-6 py-3 text-center">
-                          {item.status === "claimed" && (
-                            <button
-                              onClick={() => handleFlagDispute(item.filename)}
-                              className="bg-rose-50 hover:bg-rose-100 text-rose-600 px-3 py-1.5 rounded-lg text-xs font-bold transition border border-rose-100"
-                            >
-                              <i className="fas fa-triangle-exclamation mr-1"></i>Dispute Handover
-                            </button>
-                          )}
-                          {(item.status === "held" || !item.status) && (
-                            <span className="text-slate-400 text-xs font-medium">Held at Gates - safe</span>
-                          )}
-                          {item.status === "disputed" && (
-                            <span className="text-rose-500 text-xs font-bold">Dispute Under Review</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            </div>
           </div>
         )}
       </main>
 
-      {/* Premium Mobile Bottom Navigation Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg border-t border-slate-200/80 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] z-40 flex justify-around items-center h-16 px-4 pb-safe-bottom">
+      {/* Bottom Navigation */}
+      <nav className="bottom-nav">
         <button
           onClick={() => { setActiveTab("found"); setSearchResults([]); }}
-          className={`flex flex-col items-center justify-center relative bg-transparent border-0 outline-none cursor-pointer flex-1 py-1 ${
-            activeTab === "found" ? "text-indigo-600" : "text-slate-400"
-          }`}
+          className={`nav-item ${activeTab === "found" ? "active" : ""}`}
         >
-          {activeTab === "found" && <span className="absolute -top-1 w-6 h-1 bg-indigo-600 rounded-full animate-pulse"></span>}
-          <i className="fas fa-house text-base"></i>
-          <span className="text-[9px] font-bold mt-1 uppercase tracking-wider">Browse</span>
+          <i className="fas fa-house"></i>
+          <span>Browse</span>
         </button>
 
         <button
           onClick={() => { setActiveTab("lost"); setSearchResults([]); }}
-          className={`flex flex-col items-center justify-center relative bg-transparent border-0 outline-none cursor-pointer flex-1 py-1 ${
-            activeTab === "lost" ? "text-indigo-600" : "text-slate-400"
-          }`}
+          className={`nav-item ${activeTab === "lost" ? "active" : ""}`}
         >
-          {activeTab === "lost" && <span className="absolute -top-1 w-6 h-1 bg-indigo-600 rounded-full animate-pulse"></span>}
-          <i className="fas fa-magnifying-glass text-base"></i>
-          <span className="text-[9px] font-bold mt-1 uppercase tracking-wider">AI Search</span>
+          <i className="fas fa-magnifying-glass"></i>
+          <span>AI Search</span>
         </button>
 
-        {/* Central Floating Action button */}
+        {/* Central FAB */}
         <button
           onClick={() => setActiveTab("report")}
-          className="flex flex-col items-center justify-center relative bg-transparent border-0 outline-none cursor-pointer flex-1 -mt-4 py-1"
+          className={`nav-fab ${activeTab === "report" ? "active" : ""}`}
         >
-          <div className={`w-12 h-12 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-600/30 border-4 border-slate-50 hover:scale-105 transition-all duration-300 ${
-            activeTab === "report" ? "from-indigo-600 to-purple-600" : ""
-          }`}>
-            <i className="fas fa-plus text-base"></i>
+          <div className="nav-fab-circle">
+            <i className="fas fa-plus"></i>
           </div>
-          <span className={`text-[9px] font-bold mt-1 uppercase tracking-wider ${
-            activeTab === "report" ? "text-indigo-600" : "text-slate-400"
-          }`}>Report</span>
+          <span>Report</span>
         </button>
 
         <button
           onClick={() => { setActiveTab("my-reports"); setSearchResults([]); }}
-          className={`flex flex-col items-center justify-center relative bg-transparent border-0 outline-none cursor-pointer flex-1 py-1 ${
-            activeTab === "my-reports" ? "text-indigo-600" : "text-slate-400"
-          }`}
+          className={`nav-item ${activeTab === "my-reports" ? "active" : ""}`}
         >
-          {activeTab === "my-reports" && <span className="absolute -top-1 w-6 h-1 bg-indigo-600 rounded-full animate-pulse"></span>}
-          <i className="fas fa-clipboard-list text-base"></i>
-          <span className="text-[9px] font-bold mt-1 uppercase tracking-wider">My Reports</span>
+          <i className="fas fa-clipboard-list"></i>
+          <span>My Reports</span>
         </button>
 
         {currentUser.role && currentUser.role !== "student" && (
           <Link
             to={currentUser.role === "admin" ? "/admin" : "/guard"}
-            className="flex flex-col items-center justify-center relative bg-transparent border-0 outline-none cursor-pointer flex-1 py-1 text-slate-400 hover:text-indigo-600 no-underline"
+            className="nav-item"
+            style={{ textDecoration: "none" }}
           >
-            <i className="fas fa-shield-halved text-base"></i>
-            <span className="text-[9px] font-bold mt-1 uppercase tracking-wider">Control</span>
+            <i className="fas fa-shield-halved"></i>
+            <span>Control</span>
           </Link>
         )}
       </nav>
