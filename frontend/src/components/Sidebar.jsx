@@ -10,44 +10,24 @@ export default function Sidebar({ activeSection, onSectionChange }) {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg border-t border-slate-200/80 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] z-40 flex justify-around items-center h-16 px-4 pb-safe-bottom">
+    <nav className="bottom-nav">
       {/* Home link */}
-      <Link
-        to="/"
-        className="flex flex-col items-center justify-center text-slate-400 hover:text-slate-600 transition duration-300 no-underline"
-        title="Student View"
-      >
-        <span className="w-5 h-5 flex items-center justify-center text-base">
-          <i className="fas fa-home"></i>
-        </span>
-        <span className="text-[9px] font-bold mt-1 uppercase tracking-wider">Home</span>
+      <Link to="/" className="nav-item" style={{ textDecoration: "none" }} title="Student View">
+        <i className="fas fa-home"></i>
+        <span>Home</span>
       </Link>
 
       {/* Admin Sections */}
-      {sections.map((section) => {
-        const isActive = activeSection === section.id;
-        return (
-          <button
-            key={section.id}
-            onClick={() => onSectionChange(section.id)}
-            className="flex flex-col items-center justify-center relative bg-transparent border-0 outline-none cursor-pointer flex-1 py-1"
-          >
-            {isActive && (
-              <span className="absolute -top-1 w-6 h-1 bg-indigo-600 rounded-full animate-pulse"></span>
-            )}
-            <span className={`w-6 h-6 flex items-center justify-center text-base transition-all duration-300 ${
-              isActive ? "text-indigo-600 scale-110" : "text-slate-400 hover:text-slate-600"
-            }`}>
-              <i className={`fas ${section.icon}`}></i>
-            </span>
-            <span className={`text-[9px] font-bold mt-1 uppercase tracking-wider transition-colors duration-300 ${
-              isActive ? "text-indigo-600 font-extrabold" : "text-slate-400"
-            }`}>
-              {section.title}
-            </span>
-          </button>
-        );
-      })}
+      {sections.map((section) => (
+        <button
+          key={section.id}
+          onClick={() => onSectionChange(section.id)}
+          className={`nav-item ${activeSection === section.id ? "active" : ""}`}
+        >
+          <i className={`fas ${section.icon}`}></i>
+          <span>{section.title}</span>
+        </button>
+      ))}
     </nav>
   );
 }

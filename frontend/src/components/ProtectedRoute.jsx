@@ -11,21 +11,39 @@ export default function ProtectedRoute({ children, allowedRoles }) {
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 to-indigo-950 flex flex-col justify-center items-center text-white px-4">
-        <div className="bg-white/10 backdrop-blur-md border border-white/25 p-8 rounded-2xl shadow-2xl max-w-md w-full text-center">
-          <div className="w-20 h-20 bg-red-500/20 text-red-400 rounded-full flex items-center justify-center text-4xl mx-auto mb-6 border border-red-500/30">
-            <i className="fas fa-exclamation-triangle"></i>
+      <div className="page flex items-center justify-center" style={{ padding: "var(--space-4)" }}>
+        <div className="bg-blob bg-blob-1"></div>
+        <div className="bg-blob bg-blob-2"></div>
+        <div className="card animate-scale-in" style={{ maxWidth: 420, width: "100%", textAlign: "center" }}>
+          <div className="card-body" style={{ padding: "var(--space-10) var(--space-8)" }}>
+            <div style={{
+              width: 72,
+              height: 72,
+              borderRadius: "50%",
+              background: "var(--danger-subtle)",
+              color: "var(--danger)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "2rem",
+              margin: "0 auto var(--space-6)",
+              border: "1px solid rgba(239,68,68,0.15)",
+            }}>
+              <i className="fas fa-lock"></i>
+            </div>
+            <h2 style={{ fontSize: "1.5rem", marginBottom: "var(--space-3)" }}>Access Denied</h2>
+            <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", marginBottom: "var(--space-6)", lineHeight: 1.6 }}>
+              You do not have permission to view this page. Your current role is{" "}
+              <span style={{ color: "var(--warning)", fontWeight: 700, textTransform: "capitalize" }}>{user.role}</span>.
+            </p>
+            <Link
+              to={user.role === "guard" ? "/guard" : user.role === "admin" ? "/admin" : "/"}
+              className="btn-primary btn-full btn-lg"
+              style={{ textDecoration: "none" }}
+            >
+              <i className="fas fa-arrow-left"></i>Go to My Dashboard
+            </Link>
           </div>
-          <h2 className="text-3xl font-extrabold mb-3 tracking-tight text-white">Access Denied</h2>
-          <p className="text-indigo-200 mb-6 leading-relaxed">
-            You do not have permission to view this dashboard. Your current role is <span className="font-bold text-amber-400 capitalize">{user.role}</span>.
-          </p>
-          <Link
-            to={user.role === "guard" ? "/guard" : user.role === "admin" ? "/admin" : "/"}
-            className="w-full block bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-3 px-6 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition duration-300 shadow-lg"
-          >
-            <i className="fas fa-arrow-left mr-2"></i>Go to My Dashboard
-          </Link>
         </div>
       </div>
     );

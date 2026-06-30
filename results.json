@@ -1,0 +1,38 @@
+{
+  "OpenCLIP": {
+    "Precision@1": 94.0,
+    "Precision@5": 62.0,
+    "Recall@5": 97.0,
+    "MRR": 95.0,
+    "inference_ms": 52.2,
+    "text_search": "Yes",
+    "embedding_dim": 512
+  },
+  "SigLIP": {
+    "Precision@1": 97.0,
+    "Precision@5": 65.6,
+    "Recall@5": 98.0,
+    "MRR": 97.5,
+    "inference_ms": 89.9,
+    "text_search": "Yes",
+    "embedding_dim": 768
+  },
+  "DINOv2": {
+    "Precision@1": 91.0,
+    "Precision@5": 70.8,
+    "Recall@5": 100.0,
+    "MRR": 94.75,
+    "inference_ms": 119.4,
+    "text_search": "No",
+    "embedding_dim": 768
+  },
+  "BLIP-2": {
+    "Precision@1": 98.0,
+    "Precision@5": 73.0,
+    "Recall@5": 100.0,
+    "MRR": 98.75,
+    "inference_ms": 7167.7,
+    "text_search": "Yes",
+    "embedding_dim": 1408
+  }
+}
