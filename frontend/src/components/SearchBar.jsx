@@ -3,7 +3,19 @@ import { useState } from "react";
 export default function SearchBar({ onImageSearch, onTextSearch, loading }) {
   const [searchMode, setSearchMode] = useState("image"); // image, text
   const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
   const [searchText, setSearchText] = useState("");
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0] || null;
+    setSelectedFile(file);
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+    } else {
+      setPreviewUrl(null);
+    }
+  };
 
   return (
     <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-8 mb-8 animate-slide-up">
@@ -44,16 +56,28 @@ export default function SearchBar({ onImageSearch, onTextSearch, loading }) {
               <input
                 type="file"
                 accept="image/*"
-                onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                onChange={handleFileChange}
                 className="hidden"
               />
-              <span className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center text-xl mx-auto mb-3 group-hover:scale-110 transition duration-300 shadow-sm">
-                <i className="fas fa-cloud-arrow-up"></i>
-              </span>
-              <p className="text-slate-700 text-sm font-bold">
-                {selectedFile ? selectedFile.name : "Choose an image file"}
-              </p>
-              <p className="text-xs text-slate-400 mt-1">or drag and drop here (JPG, PNG, WebP)</p>
+              {previewUrl ? (
+                <div className="space-y-2.5">
+                  <img
+                    src={previewUrl}
+                    alt="Preview"
+                    className="max-h-40 mx-auto rounded-lg object-cover shadow-sm border border-slate-100"
+                  />
+                  <p className="text-indigo-600 text-xs font-bold">{selectedFile?.name}</p>
+                  <p className="text-[10px] text-slate-400">Click to change photo</p>
+                </div>
+              ) : (
+                <>
+                  <span className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center text-xl mx-auto mb-3 group-hover:scale-110 transition duration-300 shadow-sm">
+                    <i className="fas fa-cloud-arrow-up"></i>
+                  </span>
+                  <p className="text-slate-700 text-sm font-bold">Choose an image file</p>
+                  <p className="text-xs text-slate-400 mt-1">or drag and drop here (JPG, PNG, WebP)</p>
+                </>
+              )}
             </div>
           </label>
           <button

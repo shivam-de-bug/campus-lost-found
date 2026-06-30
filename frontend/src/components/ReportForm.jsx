@@ -8,6 +8,7 @@ export default function ReportForm({ onSubmit, loading, onCancel }) {
     category: "",
   });
   const [reportFile, setReportFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
 
   const categories = [
     "Electronics",
@@ -27,6 +28,17 @@ export default function ReportForm({ onSubmit, loading, onCancel }) {
     }));
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0] || null;
+    setReportFile(file);
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+    } else {
+      setPreviewUrl(null);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     await onSubmit(formData, reportFile);
@@ -37,6 +49,7 @@ export default function ReportForm({ onSubmit, loading, onCancel }) {
       category: "",
     });
     setReportFile(null);
+    setPreviewUrl(null);
   };
 
   return (
@@ -64,17 +77,25 @@ export default function ReportForm({ onSubmit, loading, onCancel }) {
               <input
                 type="file"
                 accept="image/*"
-                onChange={(e) => setReportFile(e.target.files?.[0] || null)}
+                onChange={handleFileChange}
                 required
                 className="hidden"
               />
-              <span className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center text-lg mx-auto mb-2.5 group-hover:scale-110 transition duration-300">
-                <i className="fas fa-camera"></i>
-              </span>
-              {reportFile ? (
-                <p className="text-indigo-600 text-xs font-bold">{reportFile.name}</p>
+              {previewUrl ? (
+                <div className="space-y-2.5">
+                  <img
+                    src={previewUrl}
+                    alt="Preview"
+                    className="max-h-40 mx-auto rounded-lg object-cover shadow-sm border border-slate-100"
+                  />
+                  <p className="text-indigo-600 text-xs font-bold">{reportFile?.name}</p>
+                  <p className="text-[10px] text-slate-400 mt-1">Click to change photo</p>
+                </div>
               ) : (
                 <>
+                  <span className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center text-lg mx-auto mb-2.5 group-hover:scale-110 transition duration-300">
+                    <i className="fas fa-camera"></i>
+                  </span>
                   <p className="text-slate-700 text-xs font-bold">Choose an image of the item</p>
                   <p className="text-[10px] text-slate-400 mt-1">Image matches best when item is centered</p>
                 </>
